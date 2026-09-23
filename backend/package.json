@@ -1,0 +1,15 @@
+{
+  "name": "stockfacil-backend",
+  "version": "1.0.0",
+  "description": "Backend MVP de StockFácil — inventario para minimarkets",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
