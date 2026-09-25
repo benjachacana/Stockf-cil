@@ -120,6 +120,48 @@ app.get('/api/productos', (req, res) => {
   res.json(productos);
 });
 
+// POST /api/productos — crear producto nuevo (para AgregarScreen)
+app.post('/api/productos', (req, res) => {
+  const { nombre, categoria, stock_inicial, precio_compra, precio_venta } = req.body;
+
+  if (!nombre || !categoria) {
+    return res.status(400).json({ error: 'Faltan campos: nombre y categoria son requeridos.' });
+  }
+
+  const stock = Number(stock_inicial) || 0;
+  const compra = Number(precio_compra) || 0;
+  const venta = Number(precio_venta) || 0;
+
+  db.exec('BEGIN');
+  try {
+    db.prepare(`
+      INSERT INTO productos (nombre, categoria, precio_compra, precio_venta)
+      VALUES (?, ?, ?, ?)
+    `).run(nombre, categoria, compra, venta);
+
+    const id = db.prepare('SELECT last_insert_rowid() AS id').get().id;
+
+    db.prepare(`
+      INSERT INTO stock_actual (producto_id, cantidad_actual) VALUES (?, ?)
+    `).run(id, stock);
+
+    db.exec('COMMIT');
+
+    res.status(201).json({
+      id,
+      nombre,
+      categoria,
+      precio_compra: compra,
+      precio_venta: venta,
+      stock,
+      estado: calcularEstado(stock),
+    });
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+});
+
 // GET /api/stock — stock crudo de todos los productos (para el selector de RegistrarScreen)
 app.get('/api/stock', (req, res) => {
   const rows = db.prepare(`
