@@ -7,7 +7,7 @@ const badgeConfig = {
   agotado: { label: 'Agotado', className: 'out' },
 };
 
-export default function InventarioScreen() {
+export default function InventarioScreen({ onSelectProducto }) {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -86,7 +86,11 @@ export default function InventarioScreen() {
           const badge = badgeConfig[p.estado];
           const isWarn = p.estado !== 'en_stock';
           return (
-            <div key={p.id} className={`product-card ${isWarn ? 'warn' : ''}`}>
+            <div
+              key={p.id}
+              className={`product-card ${isWarn ? 'warn' : ''}`}
+              onClick={() => onSelectProducto && onSelectProducto(p)}
+            >
               <div className="thumb" />
               <div className="pinfo">
                 <div className="pname">{p.nombre}</div>
