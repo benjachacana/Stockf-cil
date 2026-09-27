@@ -138,6 +138,16 @@ body {
 .error-msg { background: var(--red-50); color: var(--red-800); padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
 .success-msg { background: var(--green-50); color: var(--green-800); padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
 
+.confirm-box { background: #FEF9C3; border: 1px solid var(--amber-200); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+.confirm-box .lbl { font-size: 13px; font-weight: 700; color: var(--amber-800); }
+.confirm-box .val { font-size: 13px; color: var(--amber-800); margin-top: 4px; line-height: 1.4; }
+.confirm-actions { display: flex; gap: 10px; margin-top: 12px; }
+.confirm-actions .btn { flex: 1; }
+.btn-secondary {
+  flex: 1; text-align: center; padding: 15px; border-radius: 12px; font-size: 15px; font-weight: 700;
+  background: var(--white); color: var(--ink); border: 1.5px solid var(--gray-200); cursor: pointer;
+}
+
 /* Bottom nav */
 .bottomnav {
   position: sticky; bottom: 0; left: 0; right: 0; height: 72px; border-top: 1px solid var(--gray-200);
