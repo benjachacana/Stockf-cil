@@ -12,6 +12,7 @@ export default function InventarioScreen({ onSelectProducto }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState('Todos');
+  const [busqueda, setBusqueda] = useState('');
 
   async function cargar() {
     setLoading(true);
@@ -40,7 +41,11 @@ export default function InventarioScreen({ onSelectProducto }) {
   const atencion = bajo + agotado;
 
   const categorias = ['Todos', ...new Set(productos.map((p) => p.categoria))];
-  const visibles = filtro === 'Todos' ? productos : productos.filter((p) => p.categoria === filtro);
+  const porCategoria = filtro === 'Todos' ? productos : productos.filter((p) => p.categoria === filtro);
+  const busquedaNorm = busqueda.trim().toLowerCase();
+  const visibles = busquedaNorm
+    ? porCategoria.filter((p) => p.nombre.toLowerCase().includes(busquedaNorm))
+    : porCategoria;
 
   return (
     <div className="screen">
@@ -68,6 +73,15 @@ export default function InventarioScreen({ onSelectProducto }) {
         <div className="metric out"><div className="num">{agotado}</div><div className="lbl">Agotado</div></div>
       </div>
 
+      <div className="search-box">
+        <input
+          type="text"
+          placeholder="Buscar producto..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
+
       <div className="filters">
         {categorias.map((cat) => (
           <button
@@ -81,6 +95,9 @@ export default function InventarioScreen({ onSelectProducto }) {
       </div>
 
       <div className="section-lbl">PRODUCTOS</div>
+      {visibles.length === 0 && (
+        <div className="loading">No se encontraron productos.</div>
+      )}
       <div className="product-list">
         {visibles.map((p) => {
           const badge = badgeConfig[p.estado];

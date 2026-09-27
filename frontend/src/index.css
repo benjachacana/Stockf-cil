@@ -77,6 +77,13 @@ body {
 .metric.low { background: #FEF9C3; color: var(--amber-800); }
 .metric.out { background: var(--red-50); color: var(--red-800); }
 
+.search-box { margin-bottom: 14px; }
+.search-box input {
+  width: 100%; border: 1.5px solid var(--gray-200); border-radius: 10px; padding: 12px 14px;
+  font-size: 14px; color: var(--ink); font-family: inherit;
+}
+.search-box input:focus { outline: none; border-color: var(--green); }
+
 .filters { display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; }
 .filter {
   padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
