@@ -4,6 +4,7 @@ import InventarioScreen from './screens/InventarioScreen.jsx';
 import RegistrarScreen from './screens/RegistrarScreen.jsx';
 import AgregarScreen from './screens/AgregarScreen.jsx';
 import DetalleProductoScreen from './screens/DetalleProductoScreen.jsx';
+import ReporteScreen from './screens/ReporteScreen.jsx';
 
 export default function App() {
   const [tab, setTab] = useState('inventario');
@@ -33,6 +34,7 @@ export default function App() {
       )}
       {tab === 'registrar' && <RegistrarScreen onSaved={handleSaved} />}
       {tab === 'agregar' && <AgregarScreen onSaved={handleSaved} />}
+      {tab === 'reporte' && <ReporteScreen />}
       <BottomNav current={tab} onChange={setTab} />
     </div>
   );

@@ -36,3 +36,9 @@ export async function postProducto({ nombre, categoria, stock_inicial, precio_co
   if (!res.ok) throw new Error(data.error || 'Error al crear el producto.');
   return data;
 }
+
+export async function getReporte() {
+  const res = await fetch(`${API_URL}/api/reporte`);
+  if (!res.ok) throw new Error('No se pudo cargar el reporte.');
+  return res.json();
+}

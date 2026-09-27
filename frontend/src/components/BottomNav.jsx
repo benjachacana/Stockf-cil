@@ -3,6 +3,7 @@ export default function BottomNav({ current, onChange }) {
     { id: 'inventario', label: 'Inventario', icon: '📦' },
     { id: 'agregar', label: 'Agregar', icon: '➕' },
     { id: 'registrar', label: 'Registrar', icon: '📋' },
+    { id: 'reporte', label: 'Reporte', icon: '📊' },
   ];
 
   return (

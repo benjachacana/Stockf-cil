@@ -250,6 +250,48 @@ app.post('/api/movimientos', (req, res) => {
   });
 });
 
+// GET /api/reporte — resumen de hoy/semana, top productos movidos y últimos movimientos
+app.get('/api/reporte', (req, res) => {
+  function resumen(where, params) {
+    const rows = db.prepare(`
+      SELECT tipo, COUNT(*) AS cnt, SUM(cantidad) AS total
+      FROM movimientos
+      WHERE ${where}
+      GROUP BY tipo
+    `).all(...params);
+
+    const out = { entradas: 0, salidas: 0, unidades_movidas: 0 };
+    for (const r of rows) {
+      if (r.tipo === 'entrada') out.entradas = r.cnt;
+      if (r.tipo === 'salida') out.salidas = r.cnt;
+      out.unidades_movidas += r.total || 0;
+    }
+    return out;
+  }
+
+  const hoy = resumen("date(fecha) = date('now')", []);
+  const semana = resumen("fecha >= datetime('now', '-7 days')", []);
+
+  const topMovidos = db.prepare(`
+    SELECT m.producto_id, p.nombre, SUM(m.cantidad) AS total_movido
+    FROM movimientos m
+    JOIN productos p ON p.id = m.producto_id
+    GROUP BY m.producto_id
+    ORDER BY total_movido DESC
+    LIMIT 5
+  `).all();
+
+  const ultimosMovimientos = db.prepare(`
+    SELECT m.id, m.producto_id, p.nombre, m.tipo, m.cantidad, m.fecha, m.usuario
+    FROM movimientos m
+    JOIN productos p ON p.id = m.producto_id
+    ORDER BY m.fecha DESC
+    LIMIT 10
+  `).all();
+
+  res.json({ hoy, semana, top_movidos: topMovidos, ultimos_movimientos: ultimosMovimientos });
+});
+
 // ---------------------------------------------------------------------------
 
 
