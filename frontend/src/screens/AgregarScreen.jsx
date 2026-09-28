@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { postProducto } from '../api.js';
+import { useEffect, useState } from 'react';
+import { getProductos, postProducto } from '../api.js';
 
 export default function AgregarScreen({ onSaved }) {
   const [nombre, setNombre] = useState('');
@@ -10,6 +10,20 @@ export default function AgregarScreen({ onSaved }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
+  const [categoriasExistentes, setCategoriasExistentes] = useState([]);
+
+  async function cargarCategorias() {
+    try {
+      const productos = await getProductos();
+      setCategoriasExistentes([...new Set(productos.map((p) => p.categoria))].sort((a, b) => a.localeCompare(b, 'es')));
+    } catch {
+      // si falla, el campo sigue funcionando como texto libre
+    }
+  }
+
+  useEffect(() => {
+    cargarCategorias();
+  }, []);
 
   const formValido = nombre.trim() && categoria.trim();
 
@@ -19,15 +33,21 @@ export default function AgregarScreen({ onSaved }) {
     setSuccess('');
     setSaving(true);
     try {
+      // Si el texto coincide con una categoría existente (sin importar mayúsculas), se usa esa
+      // para no crear duplicados como "bebidas" y "Bebidas".
+      const categoriaLimpia = categoria.trim();
+      const existente = categoriasExistentes.find((c) => c.toLowerCase() === categoriaLimpia.toLowerCase());
+
       await postProducto({
         nombre: nombre.trim(),
-        categoria: categoria.trim(),
+        categoria: existente || categoriaLimpia,
         stock_inicial: Number(stockInicial) || 0,
         precio_compra: Number(precioCompra) || 0,
         precio_venta: Number(precioVenta) || 0,
       });
       setSuccess(`Producto "${nombre}" creado correctamente.`);
       setNombre(''); setCategoria(''); setStockInicial(''); setPrecioCompra(''); setPrecioVenta('');
+      cargarCategorias();
       if (onSaved) onSaved();
     } catch (err) {
       setError(err.message);
@@ -64,6 +84,20 @@ export default function AgregarScreen({ onSaved }) {
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
           />
+          {categoriasExistentes.length > 0 && (
+            <div className="cat-chips">
+              {categoriasExistentes.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`filter ${categoria.trim().toLowerCase() === cat.toLowerCase() ? 'active' : ''}`}
+                  onClick={() => setCategoria(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="field">
