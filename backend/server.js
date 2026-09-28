@@ -100,6 +100,29 @@ function calcularEstado(cantidad) {
 }
 
 // ---------------------------------------------------------------------------
+// Validación de entrada
+// ---------------------------------------------------------------------------
+const LIMITES = {
+  nombreMax: 100,
+  categoriaMax: 50,
+  usuarioMax: 50,
+  cantidadMax: 1000000,
+  precioMax: 100000000,
+};
+
+// Acepta números o strings numéricos ("5"); devuelve NaN si no es un número válido.
+// Evita casos como "5" + 10 = "510" al calcular stock.
+function aNumero(valor) {
+  if (typeof valor === 'number') return valor;
+  if (typeof valor === 'string' && valor.trim() !== '') return Number(valor);
+  return NaN;
+}
+
+function textoValido(valor, max) {
+  return typeof valor === 'string' && valor.trim().length > 0 && valor.trim().length <= max;
+}
+
+// ---------------------------------------------------------------------------
 // Endpoints
 // ---------------------------------------------------------------------------
 
@@ -123,22 +146,47 @@ app.get('/api/productos', (req, res) => {
 
 // POST /api/productos — crear producto nuevo (para AgregarScreen)
 app.post('/api/productos', (req, res) => {
-  const { nombre, categoria, stock_inicial, precio_compra, precio_venta } = req.body;
+  const { nombre, categoria, stock_inicial, precio_compra, precio_venta } = req.body || {};
 
-  if (!nombre || !categoria) {
-    return res.status(400).json({ error: 'Faltan campos: nombre y categoria son requeridos.' });
+  if (!textoValido(nombre, LIMITES.nombreMax)) {
+    return res.status(400).json({ error: `El nombre es obligatorio (máximo ${LIMITES.nombreMax} caracteres).` });
+  }
+  if (!textoValido(categoria, LIMITES.categoriaMax)) {
+    return res.status(400).json({ error: `La categoría es obligatoria (máximo ${LIMITES.categoriaMax} caracteres).` });
   }
 
-  const stock = Number(stock_inicial) || 0;
-  const compra = Number(precio_compra) || 0;
-  const venta = Number(precio_venta) || 0;
+  // Los campos opcionales vacíos/no enviados se toman como 0; si vienen, deben ser válidos.
+  const vacio = (v) => v === undefined || v === null || v === '';
+  const stock = vacio(stock_inicial) ? 0 : aNumero(stock_inicial);
+  const compra = vacio(precio_compra) ? 0 : aNumero(precio_compra);
+  const venta = vacio(precio_venta) ? 0 : aNumero(precio_venta);
+
+  if (!Number.isInteger(stock) || stock < 0 || stock > LIMITES.cantidadMax) {
+    return res.status(400).json({ error: `El stock inicial debe ser un número entero entre 0 y ${LIMITES.cantidadMax}.` });
+  }
+  if (!Number.isFinite(compra) || compra < 0 || compra > LIMITES.precioMax) {
+    return res.status(400).json({ error: 'El precio de compra debe ser un número mayor o igual a 0.' });
+  }
+  if (!Number.isFinite(venta) || venta < 0 || venta > LIMITES.precioMax) {
+    return res.status(400).json({ error: 'El precio de venta debe ser un número mayor o igual a 0.' });
+  }
+
+  const nombreLimpio = nombre.trim();
+  const categoriaLimpia = categoria.trim();
+
+  // Comparación en JS (no en SQL) porque LOWER() de SQLite no maneja bien tildes/ñ ("Atún" vs "ATÚN")
+  const duplicado = db.prepare('SELECT nombre FROM productos').all()
+    .some((p) => p.nombre.trim().toLowerCase() === nombreLimpio.toLowerCase());
+  if (duplicado) {
+    return res.status(409).json({ error: `Ya existe un producto llamado "${nombreLimpio}".` });
+  }
 
   db.exec('BEGIN');
   try {
     db.prepare(`
       INSERT INTO productos (nombre, categoria, precio_compra, precio_venta)
       VALUES (?, ?, ?, ?)
-    `).run(nombre, categoria, compra, venta);
+    `).run(nombreLimpio, categoriaLimpia, compra, venta);
 
     const id = db.prepare('SELECT last_insert_rowid() AS id').get().id;
 
@@ -150,8 +198,8 @@ app.post('/api/productos', (req, res) => {
 
     res.status(201).json({
       id,
-      nombre,
-      categoria,
+      nombre: nombreLimpio,
+      categoria: categoriaLimpia,
       precio_compra: compra,
       precio_venta: venta,
       stock,
@@ -176,6 +224,10 @@ app.get('/api/stock', (req, res) => {
 app.get('/api/movimientos', (req, res) => {
   const { producto_id } = req.query;
 
+  if (producto_id !== undefined && (!Number.isInteger(Number(producto_id)) || Number(producto_id) <= 0)) {
+    return res.status(400).json({ error: 'producto_id debe ser un número entero válido.' });
+  }
+
   let rows;
   if (producto_id) {
     rows = db.prepare(`
@@ -190,17 +242,25 @@ app.get('/api/movimientos', (req, res) => {
 
 // POST /api/movimientos — registrar entrada o salida
 app.post('/api/movimientos', (req, res) => {
-  const { producto_id, tipo, cantidad, usuario } = req.body;
+  const body = req.body || {};
+  const { tipo } = body;
 
-  if (!producto_id || !tipo || !cantidad) {
-    return res.status(400).json({ error: 'Faltan campos: producto_id, tipo, cantidad son requeridos.' });
+  const producto_id = aNumero(body.producto_id);
+  const cantidad = aNumero(body.cantidad);
+
+  if (!Number.isInteger(producto_id) || producto_id <= 0) {
+    return res.status(400).json({ error: 'producto_id debe ser un número entero válido.' });
   }
   if (!['entrada', 'salida'].includes(tipo)) {
     return res.status(400).json({ error: 'tipo debe ser "entrada" o "salida".' });
   }
-  if (cantidad <= 0) {
-    return res.status(400).json({ error: 'cantidad debe ser mayor a 0.' });
+  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+    return res.status(400).json({ error: 'cantidad debe ser un número entero mayor a 0.' });
   }
+  if (cantidad > LIMITES.cantidadMax) {
+    return res.status(400).json({ error: `cantidad no puede superar ${LIMITES.cantidadMax} unidades por movimiento.` });
+  }
+  const usuario = textoValido(body.usuario, LIMITES.usuarioMax) ? body.usuario.trim() : 'admin';
 
   const producto = db.prepare('SELECT * FROM productos WHERE id = ?').get(producto_id);
   if (!producto) {
@@ -223,7 +283,7 @@ app.post('/api/movimientos', (req, res) => {
     db.prepare(`
       INSERT INTO movimientos (producto_id, tipo, cantidad, usuario)
       VALUES (?, ?, ?, ?)
-    `).run(producto_id, tipo, cantidad, usuario || 'admin');
+    `).run(producto_id, tipo, cantidad, usuario);
 
     if (stockRow) {
       db.prepare(`
@@ -295,6 +355,15 @@ app.get('/api/reporte', (req, res) => {
 
 // ---------------------------------------------------------------------------
 
+
+// Manejo de errores: siempre responde JSON (nunca HTML con detalles internos)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido.' });
+  }
+  console.error(err);
+  res.status(500).json({ error: 'Error interno del servidor.' });
+});
 
 app.listen(PORT, () => {
   console.log(`StockFácil backend corriendo en http://localhost:${PORT}`);
