@@ -7,15 +7,16 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// CORS_ORIGIN opcional: en producción se limita al dominio del frontend; sin definir, permite todos (uso local)
+app.use(cors(process.env.CORS_ORIGIN ? { origin: process.env.CORS_ORIGIN } : undefined));
 app.use(express.json());
 
 // ---------------------------------------------------------------------------
 // Base de datos
 // ---------------------------------------------------------------------------
-const db = new DatabaseSync(path.join(__dirname, 'stockfacil.db'));
+const db = new DatabaseSync(process.env.DB_PATH || path.join(__dirname, 'stockfacil.db'));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS productos (

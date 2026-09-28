@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getProductos } from '../api.js';
+import { exportarInventarioCsv } from '../exportCsv.js';
 
 const badgeConfig = {
   en_stock: { label: 'En Stock', className: 'ok' },
@@ -54,6 +55,14 @@ export default function InventarioScreen({ onSelectProducto }) {
           <div className="inv-title">Mi Minimarket</div>
           <div className="inv-sub">Rancagua</div>
         </div>
+        <button
+          type="button"
+          className="export-btn"
+          onClick={() => exportarInventarioCsv(visibles)}
+          disabled={visibles.length === 0}
+        >
+          Exportar CSV
+        </button>
       </div>
 
       {atencion > 0 && (

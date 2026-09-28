@@ -55,6 +55,11 @@ body {
 /* Inventario */
 .inv-title { font-size: 20px; font-weight: 700; }
 .inv-sub { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+.export-btn {
+  background: var(--white); color: var(--ink); border: 1.5px solid var(--gray-200); border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .inv-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 
 .alert-banner {
