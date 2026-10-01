@@ -1,63 +1,63 @@
-# StockFácil — Backend (Fase 1 MVP)
+# StockFácil — Backend
 
-## Antes de instalar: limpia el intento anterior
+API REST de inventario para minimarkets. Node.js + Express + SQLite integrado (`node:sqlite`, sin compilación nativa).
 
-Como `better-sqlite3` alcanzó a fallar a mitad de instalación, borra esto primero dentro de tu carpeta `backend`:
+## Requisitos
 
-```
-rmdir /s /q node_modules
-del package-lock.json
-```
+- Node.js 22.5 o superior (probado con v24). SQLite viene dentro de Node, no hay que instalar nada aparte.
 
-(Si `node_modules` no llegó a crearse del todo, no pasa nada si el primer comando da error — sigue igual.)
-
-## Instalación
-
-1. Reemplaza `package.json` y `server.js` con estas versiones nuevas (misma carpeta `backend`).
-2. En la terminal, dentro de esa carpeta:
+## Instalación y arranque
 
 ```
+cd backend
 npm install
-```
-
-Esta vez solo instala `express` y `cors` — nada que compilar, así que no debería dar el error de Visual Studio.
-
-3. Levanta el servidor:
-
-```
 npm start
 ```
 
-Deberías ver:
+Debería mostrar:
 
 ```
 Seed cargado: 12 productos de prueba.
 StockFácil backend corriendo en http://localhost:3001
 ```
 
-Se usa `node:sqlite`, el módulo de SQLite que viene integrado en Node.js (desde la v22), por eso no necesitas instalar ni compilar nada aparte. El archivo `stockfacil.db` se crea solo la primera vez, con las 3 tablas y los 12 productos de prueba.
+El archivo `stockfacil.db` se crea solo la primera vez, con las tablas y 12 productos de prueba. Está en `.gitignore`: cada instalación genera la suya.
 
-**Nota:** si al correr `npm start` te sale un error tipo "unknown option '--experimental-sqlite'", es porque tu versión de Node ya no necesita ese flag (viene estable por defecto). En ese caso, abre `package.json` y deja los scripts así:
+Si Node te dice `unknown option '--experimental-sqlite'`, tu versión ya no necesita el flag. Cambia los scripts de `package.json` a `"start": "node server.js"`.
 
-```
-"start": "node server.js",
-"dev": "node server.js"
-```
+## Variables de entorno
 
-## Probar los endpoints
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `PORT` | `3001` | Puerto del servidor |
+| `DB_PATH` | `backend/stockfacil.db` | Ruta del archivo SQLite |
+| `CORS_ORIGIN` | cualquier origen | Origen permitido (ej. la URL del frontend desplegado) |
 
-Con el servidor corriendo, abre en tu navegador:
+## Base de datos
 
-- **Lista de productos con stock:** http://localhost:3001/api/productos
-- **Stock crudo:** http://localhost:3001/api/stock
-- **Historial de movimientos:** http://localhost:3001/api/movimientos
+- `productos`: catálogo.
+- `stock_actual`: stock vigente por producto.
+- `movimientos`: historial de entradas y salidas.
 
-**Registrar un movimiento** (con curl, en CMD — todo en una sola línea):
+## Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/productos` | Productos con su stock |
+| POST | `/api/productos` | Crea un producto |
+| GET | `/api/stock` | Stock crudo |
+| GET | `/api/movimientos` | Historial de movimientos |
+| POST | `/api/movimientos` | Registra una entrada o salida |
+| GET | `/api/reporte` | Resumen (hoy/semana), top productos y últimos movimientos |
+
+Ejemplo (CMD, en una sola línea):
 
 ```
 curl -X POST http://localhost:3001/api/movimientos -H "Content-Type: application/json" -d "{\"producto_id\": 1, \"tipo\": \"salida\", \"cantidad\": 5}"
 ```
 
-## Qué sigue
+## Validaciones
 
-Una vez que confirmes que estos 4 endpoints funcionan, seguimos con el frontend en React + Vite que los consume — según la Fase 1 del roadmap.
+- La cantidad debe ser mayor a 0.
+- Se rechazan las salidas mayores al stock disponible.
+- Los errores se devuelven en JSON.
